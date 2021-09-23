@@ -31,6 +31,14 @@ class MLNError(Exception):
 		super().__init__()
 		self.id = id
 
+class MLNMessage: 
+	"""
+	These are messages that can be sent to the user on certain conditions.
+	They don't necessarily indicate an error within MLN, rather inform the user they need to do something different.
+	Like MLNError, these IDs refer to instances of MessageBody.
+	"""
+	I_DONT_GET_IT = 46222
+
 class ItemType(Enum):
 	"""Types of items. The main use is to place items into different inventory tabs."""
 	BACKGROUND = auto()
@@ -267,24 +275,6 @@ class NetworkerFriendshipConditionSource(models.Model):
 
 	def __str__(self):
 		return self.source
-
-class NetworkerMessageTrigger(models.Model):
-	"""Currently meant for devs to collect data on triggers, later to be properly integrated into the system."""
-	networker = models.CharField(max_length=64, blank=True, null=True)
-	body = models.ForeignKey(MessageBody, related_name="+", on_delete=models.CASCADE)
-	trigger = models.TextField(blank=True, null=True)
-	source = models.TextField()
-	notes = models.TextField(blank=True, null=True)
-
-	def __str__(self):
-		return "From %s: %s" % (self.networker, self.body)
-
-class NetworkerMessageAttachment(Stack):
-	"""A stack to be attached to a networker message."""
-	trigger = models.ForeignKey(NetworkerMessageTrigger, related_name="attachments", on_delete=models.CASCADE)
-
-	class Meta:
-		constraints = (models.UniqueConstraint(fields=("trigger", "item"), name="networker_message_attachment_unique_trigger_item"),)
 
 class NetworkerPageSource(models.Model):
 	"""Documentation only: Note whether a reconstructed networker page has a graphical source, or is tentatively reconstructed from a description."""
