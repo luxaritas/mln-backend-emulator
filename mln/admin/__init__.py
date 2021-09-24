@@ -6,10 +6,10 @@ from django.apps import apps
 from django.contrib import admin
 from django.db.models import Q
 
-from ..models.dynamic import Attachment, Friendship, Message, Profile, InventoryStack
+from ..models.dynamic import Attachment, Friendship, Message, MessageTemplate, MessageTemplateAttachment, NetworkerFriendTrigger, NetworkerReplyTrigger, Profile, InventoryStack
 from ..models.module import Module, ModuleSaveConcertArcade, ModuleSaveSoundtrack, module_settings_classes
 from ..models.module_settings_arcade import DeliveryArcadeTile
-from ..models.static import Answer, ArcadePrize, BlueprintInfo, BlueprintRequirement, ItemInfo, ItemType, MessageBody, ModuleEditorType, ModuleExecutionCost, ModuleInfo, ModuleSetupCost, ModuleYieldInfo, NetworkerFriendshipCondition, NetworkerFriendshipConditionSource, NetworkerMessageTrigger, NetworkerMessageAttachment, StartingStack, Question
+from ..models.static import Answer, ArcadePrize, BlueprintInfo, BlueprintRequirement, ItemInfo, ItemType, MessageBody, ModuleEditorType, ModuleExecutionCost, ModuleInfo, ModuleSetupCost, ModuleYieldInfo, StartingStack, Question
 from .make_inline import custom, inlines, make_inline
 
 # Normal but customized admin interfaces
@@ -29,7 +29,7 @@ class FriendshipAdmin(admin.ModelAdmin):
 
 custom[Friendship] = FriendshipAdmin
 
-has_trigger = lambda obj: NetworkerMessageTrigger.objects.filter(body=obj).exists() or NetworkerFriendshipCondition.objects.filter(Q(success_body=obj) | Q(failure_body=obj)).exists()
+has_trigger = lambda obj: NetworkerReplyTrigger.objects.filter(body=obj).exists() or NetworkerFriendTrigger.objects.filter(body=obj).exists()
 has_trigger.short_description = "has trigger"
 has_trigger.boolean = True
 
@@ -59,6 +59,12 @@ class InventoryStackAdmin(StackAdmin):
 	search_fields = ("owner__username",) + StackAdmin.search_fields
 
 custom[InventoryStack] = InventoryStackAdmin
+
+class MessageTemplateAdmin(admin.ModelAdmin): 
+	"""Hide this from the UI, as all editing should happen in subclasses"""
+	def has_module_permission(self, request): return False
+
+custom [MessageTemplate] = MessageTemplateAdmin
 
 # Inline display functions
 
@@ -94,15 +100,15 @@ message_admin.list_display_links = "body",
 message_admin.list_filter = "is_read",
 message_admin.search_fields = "sender__username", "recipient__username", "body__subject", "body__text"
 
-friend_cond_admin = make_inline(NetworkerFriendshipCondition, NetworkerFriendshipConditionSource)
-friend_cond_admin.list_display = "networker", "condition", "success_body", "failure_body", "source"
+friend_cond_admin = make_inline(NetworkerFriendTrigger)
+friend_cond_admin.list_display = "networker", "required_item", "body", "source", "accept"
 friend_cond_admin.list_display_links = "networker",
-friend_cond_admin.search_fields = "networker", "condition", "success_body__subject", "success_body__text", "failure_body__subject", "failure_body__text", "source__source"
+friend_cond_admin.search_fields = "networker", "required_item", "body__subject", "body__text", "source"
 
-trigger_admin = make_inline(NetworkerMessageTrigger, NetworkerMessageAttachment)
-trigger_admin.list_display = "networker", "body", "trigger", "source", "notes"
-trigger_admin.list_display_links = "body",
-trigger_admin.search_fields = "networker", "body__subject", "body__text", "trigger", "source", "notes"
+reply_trigger_admin = make_inline(NetworkerReplyTrigger, MessageTemplateAttachment)
+reply_trigger_admin.list_display = "networker", "body", "message_body", "message_attachment", "trigger"
+reply_trigger_admin.list_display_links = "body",
+reply_trigger_admin.search_fields = "networker", "body__subject", "body__text", "trigger", "source", "notes"
 
 # Item infos
 

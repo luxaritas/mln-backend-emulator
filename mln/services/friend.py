@@ -1,8 +1,8 @@
 from django.contrib.auth.models import User
 from django.core.exceptions import ObjectDoesNotExist
 
-from ..models.dynamic import Friendship, FriendshipStatus
-from ..models.static import MLNError, NetworkerFriendshipCondition
+from ..models.dynamic import Friendship, FriendshipStatus, NetworkerFriendTrigger
+from ..models.static import MLNError
 
 def _get_friendship(user, relation_id):
 	try:

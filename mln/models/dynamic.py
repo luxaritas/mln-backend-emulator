@@ -158,6 +158,41 @@ class Friendship(models.Model):
 	def __str__(self):
 		return "%s -> %s: %s" % (self.from_user, self.to_user, self.get_status_display())
 
+class MessageTemplate(models.Model): 
+	"""An action that triggers a networker to send a response to the user."""
+	networker = models.ForeignKey(User, null=True, related_name="+", on_delete=models.CASCADE, limit_choices_to={"profile__is_networker": True})
+	body = models.ForeignKey(on_delete=models.deletion.CASCADE, related_name='+', to='mln.messagebody')
+
+	# Currently meant for devs to collect data on triggers, later to be properly integrated into the system.
+	networker_name = models.CharField(max_length=64, blank=True, null=True)
+	trigger = models.TextField(blank=True, null=True)
+	source = models.TextField(blank=True, null=True)
+	notes = models.TextField(blank=True, null=True)
+
+class NetworkerReplyTrigger(MessageTemplate):
+	"""A template for a message that triggers a networker's response."""
+	message_body = models.ForeignKey(MessageBody, related_name="+", on_delete=models.CASCADE, blank=True, null=True)
+	message_attachment = models.ForeignKey(ItemInfo, related_name="+", on_delete=models.CASCADE, blank=True, null=True)
+
+	def __str__(self):
+		return "From %s: %s" % (self.networker, self.body)
+
+class MessageTemplateAttachment(Stack):
+	"""A stack to be attached to a networker message."""
+	template = models.ForeignKey(MessageTemplate, related_name="attachments", on_delete=models.CASCADE)
+
+	class Meta:
+		constraints = (models.UniqueConstraint(fields=("template", "item"), name="networker_template_attachment_unique_template_item"),)
+
+class NetworkerFriendTrigger(MessageTemplate):
+	"""A template for a message when a networker accepts/rejects a friend request."""
+	required_item = models.ForeignKey(ItemInfo, related_name="+", on_delete=models.CASCADE, blank=True, null=True)
+	accept = models.BooleanField(default=True)  # whether this trigger is for accepting or rejecting the request
+
+	def evaluate(self, inventory): 
+		has_item = self.required_item is None or any(stack.item == self.required_item for stack in inventory.all())
+		return has_item == self.accept
+
 def get_or_none(cls, *args, **kwargs):
 	"""Get a model instance according to the filters, or return None if no matching model instance was found."""
 	try:

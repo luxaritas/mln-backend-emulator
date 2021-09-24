@@ -253,39 +253,6 @@ class MessageReplyType(Enum):
 	EASY_REPLY_ONLY = 2
 	NO_REPLY = 3
 
-class NetworkerFriendshipCondition(models.Model):
-	"""Stores what a networker requires to accept a friend request, and the messages to be sent on success or failure."""
-	networker = models.OneToOneField(User, related_name="friendship_condition", on_delete=models.CASCADE, limit_choices_to={"profile__is_networker": True})
-	condition = models.ForeignKey(ItemInfo, related_name="+", blank=True, null=True, on_delete=models.SET_NULL, limit_choices_to=Q(type=ItemType.BADGE) | Q(type=ItemType.BLUEPRINT) | Q(type=ItemType.ITEM) | Q(type=ItemType.MASTERPIECE))
-	success_body = models.ForeignKey(MessageBody, related_name="+", on_delete=models.CASCADE)
-	failure_body = models.ForeignKey(MessageBody, related_name="+", on_delete=models.CASCADE)
-
-class NetworkerFriendshipConditionSource(models.Model):
-	"""Not related to MLN's core data model: Sources for manually associated friendship conditions."""
-	condition = models.OneToOneField(NetworkerFriendshipCondition, related_name="source", on_delete=models.CASCADE)
-	source = models.TextField()
-
-	def __str__(self):
-		return self.source
-
-class NetworkerMessageTrigger(models.Model):
-	"""Currently meant for devs to collect data on triggers, later to be properly integrated into the system."""
-	networker = models.CharField(max_length=64, blank=True, null=True)
-	body = models.ForeignKey(MessageBody, related_name="+", on_delete=models.CASCADE)
-	trigger = models.TextField(blank=True, null=True)
-	source = models.TextField()
-	notes = models.TextField(blank=True, null=True)
-
-	def __str__(self):
-		return "From %s: %s" % (self.networker, self.body)
-
-class NetworkerMessageAttachment(Stack):
-	"""A stack to be attached to a networker message."""
-	trigger = models.ForeignKey(NetworkerMessageTrigger, related_name="attachments", on_delete=models.CASCADE)
-
-	class Meta:
-		constraints = (models.UniqueConstraint(fields=("trigger", "item"), name="networker_message_attachment_unique_trigger_item"),)
-
 class NetworkerPageSource(models.Model):
 	"""Documentation only: Note whether a reconstructed networker page has a graphical source, or is tentatively reconstructed from a description."""
 	networker = models.OneToOneField(User, related_name="+", on_delete=models.CASCADE, limit_choices_to={"profile__is_networker": True})
