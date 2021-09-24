@@ -1,5 +1,5 @@
-from ..models.dynamic import FriendshipStatus, Message
-from ..models.static import MessageBody
+from ..models.dynamic import Attachment, FriendshipStatus, Message
+from ..models.static import MessageBody, NetworkerReplyTrigger
 from .friend import are_friends
 from .inventory import add_inv_item, remove_inv_item
 
